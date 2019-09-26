@@ -8,7 +8,7 @@ const awaitEvent = require('await-event');
 const awaitFirst = require('await-first');
 const EventEmitter = require('events').EventEmitter;
 const CLOSE_PROMISE = Symbol('base#closePromise');
-
+// 继承之eventemitter
 class Base extends EventEmitter {
   constructor(options) {
     super();
@@ -21,6 +21,7 @@ class Base extends EventEmitter {
         if (is.generatorFunction(this[options.initMethod])) {
           this[options.initMethod] = co.wrap(this[options.initMethod]);
         }
+        //执行传入的init方法，完成后调用this.ready()
         const ret = this[options.initMethod]();
         assert(is.promise(ret), `[sdk-base] this.${options.initMethod} should return either a promise or a generator`);
         ret.then(() => this.ready(true))
@@ -127,16 +128,20 @@ class Base extends EventEmitter {
     } else if (is.function(flagOrFunction)) {
       this._readyCallbacks.push(flagOrFunction);
     } else if (flagOrFunction instanceof Error) {
+      // 异常情况
       this._ready = false;
       this._readyError = flagOrFunction;
       if (!this._readyCallbacks.length) {
+        // 对外抛出错误
         this.emit('error', flagOrFunction);
       }
     } else {
+      // 如果flagOrFunction为true
       this._ready = flagOrFunction;
     }
 
     if (this._ready || this._readyError) {
+      // 遍历后将数组清空
       this._readyCallbacks.splice(0, Infinity).forEach(callback => {
         process.nextTick(() => {
           callback(this._readyError);
