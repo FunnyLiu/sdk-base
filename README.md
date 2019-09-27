@@ -5,6 +5,20 @@ A base class for sdk with some common & useful functions.
 
 # 源码分析
 
+基于EventEmitter的事件模型基础上，兼容generator和await。
+
+并提供init和ready方法，依次执行注册的回调。
+
+
+## 逐个文件分析
+
+### index.js
+
+首先继承自原生events模块的EventEmitter。
+
+执行传入的initMethod方法，作为初始化。然后调用ready()，将外部通过ready()注册到this._readyCallbacks上的回调列表依次执行。
+
+对 on，once，addListener等方法进行包装，兼容generator。
 
 
 

@@ -37,11 +37,12 @@ class Base extends EventEmitter {
     // support `yield this.await('event')`
     this.await = awaitEvent;
     this.awaitFirst = awaitFirst;
-
+    // 监听错误，执行异常处理函数
     this.on('error', err => { this._defaultErrorHandler(err); });
   }
-
+  // 包装listener，对generator类型的回调进行兼容
   _wrapListener(eventName, listener) {
+    // 对generator进行兼容
     if (is.generatorFunction(listener)) {
       assert(eventName !== 'error', '[sdk-base] `error` event should not have a generator listener.');
 
@@ -56,9 +57,10 @@ class Base extends EventEmitter {
       newListener.original = listener;
       return newListener;
     }
+    // 否则直接返回listener
     return listener;
   }
-
+  // 对eventemitter的一些api进行包装
   addListener(eventName, listener) {
     return super.addListener(eventName, this._wrapListener(eventName, listener));
   }
@@ -117,6 +119,7 @@ class Base extends EventEmitter {
         } else if (this._readyError) {
           return reject(this._readyError);
         }
+        //将所有执行ready的方法加入ready回调
         this._readyCallbacks.push(err => {
           if (err) {
             reject(err);
@@ -141,7 +144,7 @@ class Base extends EventEmitter {
     }
 
     if (this._ready || this._readyError) {
-      // 遍历后将数组清空
+      // 遍历后将数组清空，Infinity的hack似乎没有必要
       this._readyCallbacks.splice(0, Infinity).forEach(callback => {
         process.nextTick(() => {
           callback(this._readyError);
@@ -149,7 +152,7 @@ class Base extends EventEmitter {
       });
     }
   }
-
+  // 异常处理函数
   _defaultErrorHandler(err) {
     if (this.listeners('error').length > 1) {
       // ignore defaultErrorHandler
